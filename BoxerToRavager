@@ -1,0 +1,70 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+local character = Player.Character or Player.CharacterAdded:Wait()
+
+-- Animation Speed (1 is default, increase for faster animations, decrease for slower ones)
+getgenv().AnimationSpeed = 2 
+
+local animationOverrides = {
+    ["rbxassetid://104217273805616"] = "rbxassetid://17230086788", 
+    ["rbxassetid://87666325594062"] = "rbxassetid://17230086788", 
+    ["rbxassetid://123361047775663"] = "rbxassetid://137231312776114", 
+    ["rbxassetid://73125086998963"] = "rbxassetid://96741777962297", 
+    ["rbxassetid://127019096463879"] = "rbxassetid://104658118894228", 
+    ["rbxassetid://132773914407608"] = "rbxassetid://102836813637956", 
+    ["rbxassetid://90479007771806"] = "rbxassetid://104658118894228", 
+    ["rbxassetid://85251888684606"] = "rbxassetid://96741777962297"
+}
+
+local blockedAnimations = {}
+for anim in pairs(animationOverrides) do
+    blockedAnimations[anim] = true
+end
+
+local function stopCurrentAnimations(humanoid)
+    for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+        if not blockedAnimations[track.Animation.AnimationId] then
+            track:Stop()
+        end
+    end
+end
+
+local function replaceAnimation(humanoid, animationTrack)
+    local originalId = animationTrack.Animation.AnimationId
+    local newAnimId = animationOverrides[originalId]
+    if newAnimId then
+        stopCurrentAnimations(humanoid)
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if animator then
+            local newAnimation = Instance.new("Animation")
+            newAnimation.AnimationId = newAnimId
+            local newTrack = animator:LoadAnimation(newAnimation)
+            newTrack.Priority = Enum.AnimationPriority.Action
+            newTrack:Play()
+            newTrack:AdjustSpeed(getgenv().AnimationSpeed) -- Adjust animation speed
+            animationTrack:Stop()
+        end
+    end
+end
+
+local function onCharacterAdded(character)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        getgenv().animationHook = humanoid.AnimationPlayed:Connect(function(track)
+            replaceAnimation(humanoid, track)
+        end)
+    end
+end
+
+local function onPlayerAdded(player)
+    player.CharacterAdded:Connect(onCharacterAdded)
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+for _, player in ipairs(Players:GetPlayers()) do
+    onPlayerAdded(player)
+end
