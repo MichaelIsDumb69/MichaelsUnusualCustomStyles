@@ -1,0 +1,16 @@
+local Players = game:GetService("Players") local RunService = game:GetService("RunService") local Player = Players.LocalPlayer local character = Player.Character or Player.CharacterAdded:Wait()
+
+local animationOverrides = { ["rbxassetid://97879019498134"] = "rbxassetid://18858818378", ["rbxassetid://99629779209580"] = "rbxassetid://18716246818", ["rbxassetid://104590501977624"] = "rbxassetid://18703560380", ["rbxassetid://96449258993578"] = "rbxassetid://18703561844", ["rbxassetid://114298855948145"] = "rbxassetid://18703563131", ["rbxassetid://127377326139733"] = "rbxassetid://18703574729", ["rbxassetid://105158094552776"] = "rbxassetid://18703575982", ["rbxassetid://73343930427066"] = "rbxassetid://18703577386" }
+
+local blockedAnimations = {} for anim in pairs(animationOverrides) do blockedAnimations[anim] = true end
+
+local function stopCurrentAnimations(humanoid) for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do if not blockedAnimations[track.Animation.AnimationId] then track:Stop() end end end
+
+local function replaceAnimation(humanoid, animationTrack) local originalId = animationTrack.Animation.AnimationId local newAnimId = animationOverrides[originalId] if newAnimId then stopCurrentAnimations(humanoid) local animator = humanoid:FindFirstChildOfClass("Animator") if animator then local newAnimation = Instance.new("Animation") newAnimation.AnimationId = newAnimId local newTrack = animator:LoadAnimation(newAnimation) newTrack.Priority = Enum.AnimationPriority.Action newTrack:Play() animationTrack:Stop() end end end
+
+local function onCharacterAdded(character) local humanoid = character:FindFirstChildOfClass("Humanoid") if humanoid then getgenv().animationHook = humanoid.AnimationPlayed:Connect(function(track) replaceAnimation(humanoid, track) end) end end
+
+local function onPlayerAdded(player) player.CharacterAdded:Connect(onCharacterAdded) if player.Character then onCharacterAdded(player.Character) end end
+
+Players.PlayerAdded:Connect(onPlayerAdded) for _, player in ipairs(Players:GetPlayers()) do onPlayerAdded(player) end
+
